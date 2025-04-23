@@ -1,53 +1,88 @@
+import asyncio
 import logging
-import datetime
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+from aiogram import Router, F
+
 from config import BOT_TOKEN
-from telegram import ReplyKeyboardMarkup
+from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
+
+form_router = Router()
+dp = Dispatcher()
+logger = logging.getLogger(__name__)
+
+start_keyboard = [[KeyboardButton(text='О магазине'), KeyboardButton(text='Товары')],
+                  [KeyboardButton(text='Обо мне')]]
+
+back_keyboard = [[KeyboardButton(text='Назад')]]
+
+catalog_keyboard = [[KeyboardButton(text='Тип1'), KeyboardButton(text='Тип2')],
+                  [KeyboardButton(text='Тип3')]]
+
+catalog_type1_keyboard = [[KeyboardButton(text='1Товар1'), KeyboardButton(text='1Товар2')],
+                  [KeyboardButton(text='1Товар3')]]
+
+catalog_type2_keyboard = [[KeyboardButton(text='2Товар1'), KeyboardButton(text='2Товар2')],
+                  [KeyboardButton(text='2Товар3')]]
+
+catalog_type3_keyboard = [[KeyboardButton(text='3Товар1'), KeyboardButton(text='3Товар2')],
+                  [KeyboardButton(text='3Товар3')]]
+
+
+YesorNo_keyboard = [[KeyboardButton(text='Добавить'), KeyboardButton(text='Назад')]]
+
+kb = ReplyKeyboardMarkup(keyboard=start_keyboard, resize_keyboard=True, one_time_keyboard=False)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG
 )
-logger = logging.getLogger(__name__)
+
+# создаем маршрутизатор
+dp = Dispatcher()
 
 
-async def start(update, context):
-    """Отправляет сообщение когда получена команда /start"""
-    user = update.effective_user
-    await update.message.reply_html(
-        rf"Привет {user.mention_html()}! Я эхо-бот. Напишите мне что-нибудь, и я пришлю это назад!",
-    )
+async def main():
+    bot = Bot(token=BOT_TOKEN)
+    await dp.start_polling(bot)
 
 
-async def help_command(update, context):
-    """Отправляет сообщение когда получена команда /help"""
-    await update.message.reply_text("Я умею показывать дату и время. "
-                                    "Команды /date и /time соответственно.")
+@dp.message(Command('start'))
+async def start(message: types.Message):
+    await message.reply("Привет.", reply_markup=kb)
 
 
-async def echo(update, context):
-    await update.message.reply_text(f'Я получил сообщение {update.message.text}')
+@dp.message(lambda message: message.text == "О магазине")
+async def stop(message: types.Message):
+    await message.reply("Пока.", reply_markup=kb)
 
 
-async def get_date(update, context):
-    d = datetime.datetime.now()
-    await update.message.reply_text(f'Текущая дата: {d.strftime("%d-%m-%Y")}')
+@dp.message(Command('help'))
+async def help(message: types.Message):
+    await message.reply("Я бот-магазин")
 
 
-async def get_time(update, context):
-    d = datetime.datetime.now()
-    await update.message.reply_text(f'Текущее время: {d.strftime("%H:%M:%S")}')
+@dp.message(lambda message: message.text == "Товары")
+async def address(message: types.Message):
+    kb = ReplyKeyboardMarkup(keyboard=catalog_keyboard, resize_keyboard=True, one_time_keyboard=False)
+    await message.reply(".", reply_markup=kb)
+
+@dp.message(lambda message: message.text == "Обо мне")
+async def phone(message: types.Message):
+    kb = ReplyKeyboardMarkup(keyboard=back_keyboard, resize_keyboard=True, one_time_keyboard=False)
+    await message.reply("Вы человек", reply_markup=kb)
 
 
-def main():
+@dp.message(lambda message: message.text == "Назад")
+async def site(message: types.Message):
+    kb = ReplyKeyboardMarkup(keyboard=start_keyboard, resize_keyboard=True, one_time_keyboard=False)
+    await message.reply("", reply_markup=kb)
 
-    application = Application.builder().token(BOT_TOKEN).build()
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("time", get_time))
-    application.add_handler(CommandHandler("date", get_date))
-    application.run_polling()
+
+@dp.message(lambda message: message.text == "О магазине")
+async def work_time(message: types.Message):
+    kb = ReplyKeyboardMarkup(keyboard=back_keyboard, resize_keyboard=True, one_time_keyboard=False)
+    await message.reply("Мы продаём всё.", reply_markup=kb)
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())  # начинаем принимать сообщения

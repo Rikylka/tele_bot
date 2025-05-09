@@ -5,10 +5,17 @@ from aiogram.filters import Command
 from aiogram import Router, F
 from config import BOT_TOKEN
 from aiogram.types import FSInputFile, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
 
 form_router = Router()
-dp = Dispatcher()
 logger = logging.getLogger(__name__)
+
+
+class Form(StatesGroup):  # создаем статусы, через которые будет проходить пользователь
+    waiting_number = State()
+    waiting_address = State()
+
 
 # глобальные переменные
 address_user = None
@@ -73,7 +80,11 @@ async def help(message: types.Message):
 # start_keyboard
 @dp.message(lambda message: message.text == "О магазине")
 async def info_shop(message: types.Message):
-    await message.reply("Мы - The great Delivery. Новая и самая лучшая доставка в вашем городе! \n", reply_markup=kb)
+    photo = FSInputFile("foto_food/logo.png")
+    await message.answer_photo(
+        photo=photo,
+        caption="Мы - The great Delivery. Новая и самая лучшая доставка в вашем городе!",
+        reply_markup=kb)
 
 
 @dp.message(lambda message: message.text == "Меню")
@@ -86,6 +97,8 @@ async def menu(message: types.Message):
 
 @dp.message(lambda message: message.text == "Обо мне")
 async def phone(message: types.Message):
+    global number_user
+    global address_user
     kb = ReplyKeyboardMarkup(keyboard=about_me_keyboard, resize_keyboard=True, one_time_keyboard=False)
     await message.reply(f"Ваш номер: {number_user} \n Адрес доставки: {address_user}", reply_markup=kb)
 
@@ -374,6 +387,59 @@ async def phone(message: types.Message):
                 if all_stroki[i].rstrip('\n') == for_add_bluda:
                     price = int(all_stroki[i + 1].rstrip('\n'))
         sum_zakaz -= price
+
+
+# about_me_keyboard
+@dp.message(F.text == "Изменить номер")
+async def reset_number_def(message: types.Message, state: FSMContext):
+    await message.answer("Введите ваш номер телефона")
+    await state.set_state(Form.waiting_number)
+
+
+@dp.message(Form.waiting_number)
+async def reset_number(message: types.Message, state: FSMContext):
+    global number_user
+    number = message.text.replace(" ", "").replace("\t", "")
+
+    if not (number.startswith("+7") or number.startswith("8")):
+        await message.answer("Неверный формат")
+        return
+
+    if not (number.count("(") == 0 and number.count(")") == 0 or number.count("(") == 1 and number.count(
+            ")") == 1 and number.index("(") < number.index(")")):
+        await message.answer("Неверный формат")
+        return
+
+    if "--" in number or number[0] == "-" or number[-1] == "-":
+        await message.answer("Неверный формат")
+        return
+
+    number = "".join([sym for sym in number if sym.isdigit() or sym == "+"])
+
+    if number.startswith("8"):
+        number = "+7" + number[1:]
+
+    if len(number) != 12:
+        await message.answer("Неверное количество цифр")
+        return
+
+    number_user = number
+    await message.answer(f"Номер обновлен: {number_user}")
+    await state.clear()
+
+
+@dp.message(F.text == "Изменить адрес")
+async def reset_address_def(message: types.Message, state: FSMContext):
+    await message.answer("Введите новый адрес доставки")
+    await state.set_state(Form.waiting_address)
+
+
+@dp.message(Form.waiting_address)
+async def reset_address(message: types.Message, state: FSMContext):
+    global address_user
+    address_user = message.text
+    await message.answer("Адрес доставки обновлен!")
+    await state.clear()
 
 
 # Назад

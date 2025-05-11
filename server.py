@@ -12,7 +12,7 @@ form_router = Router()
 logger = logging.getLogger(__name__)
 
 
-class Form(StatesGroup):  # создаем статусы, через которые будет проходить пользователь
+class Form(StatesGroup):
     waiting_number = State()
     waiting_address = State()
 
@@ -452,4 +452,4 @@ async def back_start(message: types.Message):
 
 
 if __name__ == '__main__':
-    asyncio.run(main())  # начинаем принимать сообщения
+    asyncio.run(main())

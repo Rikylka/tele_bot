@@ -1,3 +1,6 @@
-Flask
 asyncio
 logging
+aiogram
+aiogram.types
+aiogram.fsm.state
+aiogram.fsm.context

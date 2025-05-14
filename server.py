@@ -7,7 +7,9 @@ from config import BOT_TOKEN
 from aiogram.types import FSInputFile, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from aiogram.client.session.aiohttp import AiohttpSession
 
+session_bot = AiohttpSession(proxy="http://proxy.server:3128")
 form_router = Router()
 logger = logging.getLogger(__name__)
 
@@ -63,12 +65,22 @@ dp = Dispatcher()
 
 # бот
 async def main():
-    bot = Bot(token=BOT_TOKEN)
+    bot = Bot(token=BOT_TOKEN, session=session_bot)
     await dp.start_polling(bot)
 
 
 @dp.message(Command('start'))
 async def start(message: types.Message):
+    global address_user
+    global number_user
+    global zakaz_user_dict
+    global zakaz_user_listkey
+    global sum_zakaz
+    address_user = None
+    number_user = None
+    zakaz_user_dict = dict()
+    zakaz_user_listkey = []
+    sum_zakaz = 0
     await message.reply("Привет.", reply_markup=kb)
 
 
